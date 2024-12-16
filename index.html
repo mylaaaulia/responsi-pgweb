@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WebGIS DKI Jakarta</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-sA+oNJjWUpFVk6Pti3aAILeSLJ9AvTh0k5TVseZt5pA=" crossorigin="" />
+    <style>
+        main {
+            margin-top: 70px;
+        }
+
+        /* Background Website */
+        body {
+            background-image: url('./images/hosp1.jpg');
+            /* Path relatif ke gambar */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: var(--text-gray);
+            font-family: 'Arial', sans-serif;
+        }
+
+        /* Overlay untuk latar belakang */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.7);
+            /* Overlay warna putih dengan transparansi */
+            z-index: -3;
+            /* Pastikan overlay berada di bawah konten */
+        }
+
+        /* Warna Umum */
+        :root {
+            --matcha-green: #D9E4DD;
+            /* Hijau Matcha Pastel */
+            --light-beige: #F7F3EB;
+            /* Beige Muda */
+            --soft-green: #A8C3A7;
+            /* Hijau Pastel Lembut */
+            --soft-gray: #C8C8C8;
+            /* Abu-abu Pastel */
+            --text-gray: #5E5E5E;
+            /* Abu-abu untuk teks */
+            --text-dark-green: #6B8F71;
+            /* Hijau tua lembut */
+        }
+
+        /* Latar Belakang Utama */
+        body {
+            background-color: var(--light-beige);
+            color: var(--text-gray);
+            font-family: 'Arial', sans-serif;
+        }
+
+        /* Header dan Navbar */
+        .navbar {
+            background-color: var(--soft-green) !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand,
+        .nav-link {
+            color: var(--text-dark-green) !important;
+            font-weight: bold;
+        }
+
+        .navbar-brand:hover,
+        .nav-link:hover {
+            color: var(--matcha-green) !important;
+        }
+
+        /* Elemen Alert */
+        .alert-success {
+            background-color: var(--soft-green);
+            color: var(--text-gray);
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Card Style */
+        .card {
+            background-color: var(--matcha-green);
+            color: var(--text-dark-green);
+            border: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            background-color: var(--soft-green);
+            color: var(--text-gray);
+            font-weight: bold;
+        }
+
+        /* Tombol Utama */
+        .btn-primary {
+            background-color: var(--soft-green);
+            border: none;
+            color: var(--light-beige);
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--matcha-green);
+            color: var(--text-dark-green);
+        }
+
+        /* Footer */
+        .footer {
+            background-color: var(--soft-gray);
+            color: var(--text-dark-green);
+            text-align: center;
+            padding: 15px 0;
+        }
+
+        /* Kontainer Utama */
+        .container {
+            background-color: var(--light-beige);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .carousel-inner img {
+            border: 5px solid var(--soft-green);
+            /* Border sesuai tema */
+            border-radius: 15px;
+            /* Ujung melengkung */
+            max-width: 90%;
+            /* Membuat gambar lebih kecil */
+            margin: 0 auto;
+            /* Pusatkan gambar */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            /* Tambahkan efek bayangan */
+        }
+
+        .card-body p {
+            text-align: justify;
+            /* Membuat paragraf rata kiri dan kanan */
+            line-height: 1.6;
+            /* Memberikan jarak antar baris */
+        }
+    </style>
+
+<body>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">WebGIS Fasilitas Kesehatan</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="#">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#deskripsi">Deskripsi</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#datapersebaran">Data Faskes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#website">Website</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#galeri">Galeri</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#peta">Peta</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#exampleModal">Pembuat</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container border rounded" style="border-color: black;">
+            <div class="alert alert-success text-center" role="alert">
+                <h1>Wilayah DKI Jakarta</h1>
+                <h4>Persebaran Fasilitas Kesehatan</h4>
+            </div>
+
+            <div class="row">
+                <div class="col-6 offset-3">
+                    <div id="carouselExampleAutoplaying" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+
+                            <div class="carousel-item active">
+                                <img src="images/jkt1.jpg" class="d-block w-100" alt="...">
+                            </div>
+                            <div class="carousel-item">
+                                <img src="images/jkt2.jpg" class="d-block w-100" alt="...">
+                            </div>
+                            <div class="carousel-item">
+                                <img src="images/jkt3.jpg" class="d-block w-100" alt="...">
+                            </div>
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleAutoplaying"
+                            data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleAutoplaying"
+                            data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header alert alert-success">
+                    <h5 id="deskripsi">DKI Jakarta: Pusat Persebaran Fasilitas Kesehatan</h5>
+                </div>
+                <div class="card-body">
+                    <p>DKI Jakarta menjadi salah satu pusat kota pemerintahan, ekonomi dan budaya terbesar di Indonesia.
+                        DKI Jakarta terletak pada Pulau Jawa Barat dengan luas wilayah sekitar 661,52 km2 dan kepadatan
+                        penduduk mencapai
+                        lebih dari 16.000 jiwa/km2 menjadikannya salah satu kota terpadat di dunia. DKI Jakarta terdiri
+                        dari 5 kota administrasi
+                        yakni Jakarta Pusat, Jakarta Barat, Jakarta Timur, Jakarta Selatan dan Jakarta Utara serta 1
+                        kabupaten administrasi
+                        yakni Kepulauan Seribu.</p>
+
+                    <p>Sebagai pusat aktivitas nasional, Jakarta menjadi rumah bagi banyak pendatang dari seluruh
+                        wilayah Indonesia,
+                        sehingga tingkat urbanisasi dan permintaan terhadap layanan publik, termasuk kesehatan, sangat
+                        tinggi. DKI Jakarta memiliki
+                        sistem layanan kesehatan yang relatif lebih maju dibandingkan daerah lain di Indonesia. Berikut
+                        adalah beberapa fakta terkait
+                        persebaran fasilitas kesehatan di DKI Jakarta:</p>
+
+                    <p><strong>1. Jumlah Rumah Sakit</strong><br>
+                        Jakarta memiliki lebih dari 200 rumah sakit yang melayani berbagai tingkatan, mulai dari rumah
+                        sakit umum hingga rumah sakit khusus.
+                        Rumah sakit ini tersebar di seluruh wilayah kota administrasi, dengan konsentrasi lebih tinggi
+                        di Jakarta Pusat dan Jakarta Selatan.
+                        Contoh rumah sakit besar di Jakarta termasuk RS Cipto Mangunkusumo (RSCM), RS Pelni, RS
+                        Fatmawati, dan RS Harapan Kita.</p>
+
+                    <p><strong>2. Puskesmas (Pusat Kesehatan Masyarakat)</strong><br>
+                        DKI Jakarta memiliki lebih dari 300 Puskesmas yang tersebar di setiap kecamatan, bahkan hingga
+                        tingkat kelurahan.
+                        Puskesmas di Jakarta memberikan layanan kesehatan primer yang mencakup pemeriksaan, imunisasi,
+                        kesehatan ibu dan anak, hingga penanganan penyakit menular.</p>
+
+                    <p><strong>3. Klinik dan Fasilitas Swasta</strong><br>
+                        Jakarta juga memiliki ribuan klinik dan fasilitas kesehatan swasta, mulai dari klinik umum
+                        hingga klinik spesialis.
+                        Klinik-klinik ini memainkan peran penting dalam mendukung layanan kesehatan masyarakat, terutama
+                        di wilayah dengan kepadatan tinggi.</p>
+
+                    <p><strong>4. Apotek</strong><br>
+                        Jakarta memiliki apotek yang tersebar hampir di setiap sudut kota. Selain jaringan apotek besar
+                        seperti Kimia Farma, K24, dan Century,
+                        terdapat banyak apotek independen yang memudahkan akses masyarakat terhadap obat-obatan.</p>
+
+                    <p>DKI Jakarta memiliki persebaran fasilitas kesehatan yang cukup baik dibandingkan dengan daerah
+                        lain di Indonesia.
+                        Namun, tantangan urbanisasi, kesenjangan akses, dan tingginya permintaan layanan kesehatan
+                        menuntut inovasi dan perbaikan berkelanjutan
+                        untuk memastikan layanan yang merata dan berkualitas bagi seluruh masyarakat.</p>
+                </div>
+            </div>
+
+
+            <div class="card mt-3">
+                <div class="card-header alert alert-success">
+                    <h5 id="datapersebaran">Data Persebaran Fasilitas Kesehatan Wilayah DKI Jakarta</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <tr class="text-center">
+                                <th>Wilayah Administrasi</th>
+                                <th>Rumah Sakit 2021</th>
+                                <th>Rumah Sakit 2020</th>
+                                <th>Rumah Sakit 2018</th>
+                                <th>Puskesmas Kecamatan 2021</th>
+                                <th>Puskesmas Kecamatan 2020</th>
+                                <th>Puskesmas Kecamatan 2018</th>
+                                <th>Puskesmas Kelurahan 2021</th>
+                                <th>Puskesmas Kelurahan 2020</th>
+                                <th>Puskesmas Kelurahan 2018</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Kep. Seribu</td>
+                                <td class="text-center">1</td>
+                                <td class="text-center">1</td>
+                                <td class="text-center">1</td>
+                                <td class="text-center">2</td>
+                                <td class="text-center">2</td>
+                                <td class="text-center">2</td>
+                                <td class="text-center">4</td>
+                                <td class="text-center">4</td>
+                                <td class="text-center">6</td>
+                            </tr>
+                            <tr>
+                                <td>Jakarta Selatan</td>
+                                <td class="text-center">57</td>
+                                <td class="text-center">57</td>
+                                <td class="text-center">53</td>
+                                <td class="text-center">10</td>
+                                <td class="text-center">10</td>
+                                <td class="text-center">10</td>
+                                <td class="text-center">67</td>
+                                <td class="text-center">67</td>
+                                <td class="text-center">69</td>
+                            </tr>
+                            <tr>
+                                <td>Jakarta Timur</td>
+                                <td class="text-center">54</td>
+                                <td class="text-center">54</td>
+                                <td class="text-center">46</td>
+                                <td class="text-center">10</td>
+                                <td class="text-center">10</td>
+                                <td class="text-center">10</td>
+                                <td class="text-center">75</td>
+                                <td class="text-center">75</td>
+                                <td class="text-center">77</td>
+                            </tr>
+                            <tr>
+                                <td>Jakarta Pusat</td>
+                                <td class="text-center">38</td>
+                                <td class="text-center">38</td>
+                                <td class="text-center">36</td>
+                                <td class="text-center">8</td>
+                                <td class="text-center">8</td>
+                                <td class="text-center">8</td>
+                                <td class="text-center">34</td>
+                                <td class="text-center">34</td>
+                                <td class="text-center">36</td>
+                            </tr>
+                            <tr>
+                                <td>Jakarta Barat</td>
+                                <td class="text-center">29</td>
+                                <td class="text-center">29</td>
+                                <td class="text-center">27</td>
+                                <td class="text-center">8</td>
+                                <td class="text-center">8</td>
+                                <td class="text-center">8</td>
+                                <td class="text-center">67</td>
+                                <td class="text-center">67</td>
+                                <td class="text-center">65</td>
+                            </tr>
+                            <tr>
+                                <td>Jakarta Utara</td>
+                                <td class="text-center">30</td>
+                                <td class="text-center">30</td>
+                                <td class="text-center">27</td>
+                                <td class="text-center">6</td>
+                                <td class="text-center">6</td>
+                                <td class="text-center">6</td>
+                                <td class="text-center">41</td>
+                                <td class="text-center">41</td>
+                                <td class="text-center">43</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Jumlah Total</strong></td>
+                                <td class="text-center"><strong>209</strong></td>
+                                <td class="text-center"><strong>209</strong></td>
+                                <td class="text-center"><strong>190</strong></td>
+                                <td class="text-center"><strong>44</strong></td>
+                                <td class="text-center"><strong>44</strong></td>
+                                <td class="text-center"><strong>44</strong></td>
+                                <td class="text-center"><strong>288</strong></td>
+                                <td class="text-center"><strong>288</strong></td>
+                                <td class="text-center"><strong>296</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header alert alert-success">
+                    <h5 id="website">Website</h5>
+                </div>
+                <div class="card-body">
+                    <a href="https://dinkes.jakarta.go.id/petakesehatan/index" target="_blank"
+                        rel="noopener noreferrer">Dinas Kesehatan Jakarta: Maps Sebaran Fasilitas Kesehatan</a>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header alert alert-success">
+                    <h4>Galeri</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-sm-12 col-md-6 col-lg-4">
+                            <img src="images/jkt4.jpg" class="img-fluid" alt="...">
+                        </div>
+                        <div class="col-sm-12 col-md-6 col-lg-4">
+                            <img src="images/jkt2.jpg" class="img-fluid" alt="">
+                        </div>
+                        <div class="col-sm-12 col-md-6 col-lg-4">
+                            <img src="images/jkt3.jpg" class="img-fluid" alt="">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header alert alert-success">
+                    <h5 id="peta">Peta</h5>
+                </div>
+                <div class="card-body">
+
+                    <!-- Kontainer untuk peta -->
+                    <div id="map" style="height: 560px; width: 100%;"></div>
+
+                    <!-- Script Leaflet JS -->
+                    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+                    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+                        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+                    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+                    <script>
+                        // Inisialisasi peta dengan koordinat DKI Jakarta dan zoom level 12
+                        var map = L.map('map').setView([-6.2088, 106.8456], 12);
+
+                        // Menambahkan tile layer dari OpenStreetMap
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        }).addTo(map);
+
+                        // Menambahkan marker di lokasi DKI Jakarta
+                        L.marker([-6.2088, 106.8456]).addTo(map)
+                            .bindPopup("<b>DKI Jakarta</b><br>Ibu Kota Indonesia")
+                            .openPopup();
+
+                        // GeoJSON Point Sarana Prasarana (Fasilitas Kesehatan)
+                        var sarana_prasarana = L.geoJSON(null, {
+                            pointToLayer: function (feature, latlng) {
+                                return L.marker(latlng, {
+                                    icon: L.icon({
+                                        iconUrl: "icon/hospital_marker.png", // Path ke ikon marker
+                                        iconSize: [30, 30], // Ukuran ikon
+                                        iconAnchor: [20, 40], // Posisi ikon terhadap titik
+                                        popupAnchor: [0, -40], // Posisi popup terhadap ikon
+                                    }),
+                                });
+                            },
+                            onEachFeature: function (feature, layer) {
+                                if (feature.properties) {
+                                    layer.bindPopup(
+                                        "<b>Nama Fasilitas:</b> " + feature.properties.REMARK +
+                                        "<br><b>Longitude:</b> " + feature.properties.X +
+                                        "<br><b>Latitude:</b> " + feature.properties.Y
+                                    );
+                                }
+                            }
+                        });
+
+                        // Menampilkan data dari database ke peta
+                        fetch('get_faskes.php') // File untuk mengembalikan data dalam format GeoJSON
+                            .then(response => response.json())
+                            .then(data => {
+                                L.geoJSON(data, {
+                                    onEachFeature: function (feature, layer) {
+                                        layer.bindPopup(
+                                            "<b>Nama Fasilitas:</b> " + feature.properties.REMARK +
+                                            "<br><b>Longitude:</b> " + feature.geometry.X[0] +
+                                            "<br><b>Latitude:</b> " + feature.geometry.Y[1]
+                                        );
+                                    }
+                                }).addTo(map);
+                            });
+
+
+                        // Memuat data GeoJSON
+                        fetch('data/faskes_jkt.geojson') // Ganti dengan URL atau path ke file GeoJSON Anda
+                            .then(response => response.json())
+                            .then(data => {
+                                sarana_prasarana.addData(data).addTo(map);
+                            })
+                            .catch(error => console.error("Error loading GeoJSON:", error));
+
+
+                        $.getJSON("data/faskes_jkt.geojson", function (data) {
+                            sarana_prasarana.addData(data); // Menambahkan data ke dalam GeoJSON Point Sarana Prasarana
+                            map.addLayer(sarana_prasarana); // Menambahkan GeoJSON Point Sarana Prasarana ke dalam peta
+                        });
+
+                        document.querySelector('.btn-primary').addEventListener('click', function () {
+                            var nama = document.getElementById('exampleFormControlInput1').value;
+                            var longitude = parseFloat(document.getElementById('exampleFormControlInput2').value);
+                            var latitude = parseFloat(document.getElementById('exampleFormControlInput3').value);
+
+                            // Validasi input
+                            if (!nama || isNaN(longitude) || isNaN(latitude)) {
+                                alert("Harap isi semua kolom dengan benar.");
+                                return;
+                            }
+
+                            // Membuat fitur GeoJSON baru
+                            var newFeature = {
+                                "type": "Feature",
+                                "properties": {
+                                    "nama": nama,
+                                    "longitude": longitude,
+                                    "latitude": latitude
+                                },
+                                "geometry": {
+                                    "type": "Point",
+                                    "coordinates": [longitude, latitude]
+                                }
+                            };
+
+                            // Menambahkan titik ke peta
+                            sarana_prasarana.addData(newFeature);
+
+                            // Reset form input
+                            document.getElementById('exampleFormControlInput1').value = '';
+                            document.getElementById('exampleFormControlInput2').value = '';
+                            document.getElementById('exampleFormControlInput3').value = '';
+
+                            // Optional: Log GeoJSON layer ke console (untuk debugging)
+                            console.log("Data terkini GeoJSON:", sarana_prasarana.toGeoJSON());
+                        });
+                    </script>
+
+                    <!-- Script Bootstrap -->
+                    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+                    <script src="lib/L.Geoserver.js"></script>
+
+                    <script>
+                        // Batas Administrasi DKI Jakarta
+                        var wmsLayer = L.tileLayer.wms("http://localhost:8080/geoserver/pgweb-12/wms", {
+                            layers: "DKIJAKARTA_MERGE",
+                            format: "image/png",
+                            transparent: true,
+                            version: "1.1.1",
+                            attribution: "GeoServer"
+                        }).addTo(map);
+
+                        var layerLegend = L.Geoserver.legend("http://localhost:8080/geoserver/pgweb-12/wms", {
+                            layers: "DKIJAKARTA_MERGE",
+                            // style: stylefile,
+                        });
+
+                        layerLegend.addTo(map);
+
+                        // BaseMaps dan OverlayMaps untuk Layer Control
+                        var baseMaps = {
+                            "OpenStreetMap": osm
+                        };
+
+                        var overlayMaps = {
+                            "Batas Administrasi": wmsLayer,
+                            "Data Fasilitas Kesehatan": sarana_prasarana
+                        };
+
+                        // Menambahkan Layer Control ke peta
+                        var layerControl = L.control.layers(baseMaps, overlayMaps).addTo(map);
+
+                    </script>
+
+                    <div class="text-end" style="margin-top: 20px;"> <!-- Memberikan jarak 20px -->
+                        <button id="cekFaskes" type="button" class="btn btn-primary">
+                            Cek Tabel Fasilitas Kesehatan DKI Jakarta
+                        </button>
+                    </div>
+
+                    <script>
+                        // Fungsi ketika tombol diklik
+                        document.getElementById("cekFaskes").addEventListener("click", function () {
+                            window.open('formfaskes.php', '_blank'); // Arahkan ke halaman formfaskes.php
+                        });
+                    </script>
+</body>
+</script>
+</div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Pembuat</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Nama: Myla Aulia Syahida <br>
+                NIM: 23/522046/SV/23577 <br>
+                Kelas: B
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
+</body>
+
+</html>
